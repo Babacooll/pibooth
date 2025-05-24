@@ -568,13 +568,13 @@ class PrintBackground(Background):
 
         text = get_translated_text("print_forget")
         if text:
-            rect = pygame.Rect(self._rect.width // 2, 0,
+            rect = pygame.Rect(self._rect.width // 2 + 30, 0,
                                self._rect.width // 5 - 2 * self._text_border,
-                               self._rect.height * 0.3 - 2 * self._text_border)
+                               self._rect.height * 0.25 - 2 * self._text_border)
             if self.arrow_location == ARROW_TOP:
                 rect.top = self._rect.height * 0.08
             else:
-                rect.bottom = self._rect.height - self._rect.height * 0.08
+                rect.bottom = self._rect.height - 20
 
             self._write_text(text, rect)
 
