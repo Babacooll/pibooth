@@ -89,11 +89,11 @@ class PrinterPlugin(object):
                     if any("offline" in r for r in reasons):
                         return "Imprimante déconnectée"
                     if any("media-empty" in r for r in reasons):
-                        return "Plus de papier"
+                        return "Pas de papier ou d'encre"
                     if any("marker-supply-empty" in r for r in reasons):
-                        return "Cartouche vide"
+                        return "Pas de papier ou d'encre"
                     if any("input-tray-missing" in r for r in reasons):
-                        return "Pas de papier ou cassette mal insérée"
+                        return "Pas de papier ou d'encre"
 
             return None  # tout est bon
         except Exception as e:
