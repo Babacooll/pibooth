@@ -92,6 +92,8 @@ class PrinterPlugin(object):
                         return "Plus de papier"
                     if any("marker-supply-empty" in r for r in reasons):
                         return "Cartouche vide"
+                    if any("input-tray-missing" in r for r in reasons):
+                        return "Pas de papier ou cassette mal insérée"
 
             return None  # tout est bon
         except Exception as e:
