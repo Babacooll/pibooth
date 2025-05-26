@@ -82,6 +82,9 @@ class PrinterPlugin(object):
                 if "SELPHY" in name.upper():
                     reasons = [r.lower() for r in attrs.get("printer-state-reasons", [])]
 
+                    LOGGER.debug("Vérification de l'état de l'imprimante %s", name)
+                    LOGGER.debug(reasons)
+
                     if any("offline" in r for r in reasons):
                         return "Imprimante déconnectée"
                     if any("media-empty" in r for r in reasons):
@@ -98,7 +101,7 @@ class PrinterPlugin(object):
         win.show_oops()
         import pygame
         import time
-        
+
         font = pygame.font.Font(None, 48)
         win.surface.fill((0, 0, 0))
         text_surface = font.render(message, True, (255, 0, 0))
