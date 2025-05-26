@@ -78,12 +78,13 @@ class PrinterPlugin(object):
         try:
             import cups
             conn = cups.Connection()
+            LOGGER.info(conn.getPrinters().items())
             for name, attrs in conn.getPrinters().items():
                 if "SELPHY" in name.upper():
                     reasons = [r.lower() for r in attrs.get("printer-state-reasons", [])]
 
-                    LOGGER.debug("Vérification de l'état de l'imprimante %s", name)
-                    LOGGER.debug(reasons)
+                    LOGGER.info("Vérification de l'état de l'imprimante %s", name)
+                    LOGGER.info(reasons)
 
                     if any("offline" in r for r in reasons):
                         return "Imprimante déconnectée"
