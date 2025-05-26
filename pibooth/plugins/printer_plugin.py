@@ -14,12 +14,20 @@ class PrinterPlugin(object):
     def __init__(self, plugin_manager):
         self._pm = plugin_manager
 
-    def print_picture(self, cfg, app):
-        LOGGER.info("Send final picture to printer")
+    def print_picture(self, cfg, win, app):
+        # Vérification de l’état de l’imprimante Selphy
+        error_msg = self._check_selphy_status(app)
+        if error_msg:
+            LOGGER.error("⛔ Impression annulée : %s", error_msg)
+            self._display_error(win, error_msg)
+            return  # On ne lance pas l’impression
+
+        LOGGER.info("✅ Envoi de la photo à l’imprimante")
         app.printer.print_file(app.previous_picture_file,
-                               cfg.getint('PRINTER', 'pictures_per_page'))
+                            cfg.getint('PRINTER', 'pictures_per_page'))
         app.count.printed += 1
         app.count.remaining_duplicates -= 1
+
 
     @pibooth.hookimpl
     def pibooth_cleanup(self, app):
@@ -32,7 +40,7 @@ class PrinterPlugin(object):
         app.count.remaining_duplicates = cfg.getint('PRINTER', 'max_duplicates')
 
     @pibooth.hookimpl
-    def state_wait_do(self, cfg, app, events):
+    def state_wait_do(self, cfg, app, win, events):
         if app.find_print_event(events) and app.previous_picture_file and app.printer.is_installed():
 
             if app.count.remaining_duplicates <= 0:
@@ -45,23 +53,53 @@ class PrinterPlugin(object):
                                cfg.getint('PRINTER', 'max_pages'))
                 return
 
-            self.print_picture(cfg, app)
+            self.print_picture(cfg, win, app)
 
     @pibooth.hookimpl
     def state_processing_enter(self, cfg, app):
         app.count.remaining_duplicates = cfg.getint('PRINTER', 'max_duplicates')
 
     @pibooth.hookimpl
-    def state_processing_do(self, cfg, app):
+    def state_processing_do(self, cfg, win, app):
         if app.previous_picture_file and app.printer.is_ready():
             number = cfg.gettyped('PRINTER', 'auto_print')
             if number == 'max':
                 number = cfg.getint('PRINTER', 'max_duplicates')
             for i in range(number):
                 if app.count.remaining_duplicates > 0:
-                    self.print_picture(cfg, app)
+                    self.print_picture(cfg, win, app)
 
     @pibooth.hookimpl
-    def state_print_do(self, cfg, app, events):
+    def state_print_do(self, cfg, app, win, events):
         if app.find_print_event(events) and app.previous_picture_file:
-            self.print_picture(cfg, app)
+            self.print_picture(cfg, win, app)
+
+    def _check_selphy_status(self, app):
+        try:
+            import cups
+            conn = cups.Connection()
+            for name, attrs in conn.getPrinters().items():
+                if "SELPHY" in name.upper():
+                    reasons = [r.lower() for r in attrs.get("printer-state-reasons", [])]
+
+                    if any("offline" in r for r in reasons):
+                        return "Imprimante déconnectée"
+                    if any("media-empty" in r for r in reasons):
+                        return "Plus de papier"
+                    if any("marker-supply-empty" in r for r in reasons):
+                        return "Cartouche vide"
+
+            return None  # tout est bon
+        except Exception as e:
+            LOGGER.exception("Erreur CUPS lors de la vérification d'imprimante")
+            return "Erreur de communication avec l’imprimante"
+
+    def _display_error(self, win, message):
+        win.show_oops()
+        import pygame
+        font = pygame.font.Font(None, 48)
+        win.surface.fill((0, 0, 0))
+        text_surface = font.render(message, True, (255, 0, 0))
+        rect = text_surface.get_rect(center=win.surface.get_rect().center)
+        win.surface.blit(text_surface, rect)
+        pygame.display.update()
