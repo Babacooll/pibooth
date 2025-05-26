@@ -97,9 +97,12 @@ class PrinterPlugin(object):
     def _display_error(self, win, message):
         win.show_oops()
         import pygame
+        import time
+        
         font = pygame.font.Font(None, 48)
         win.surface.fill((0, 0, 0))
         text_surface = font.render(message, True, (255, 0, 0))
         rect = text_surface.get_rect(center=win.surface.get_rect().center)
         win.surface.blit(text_surface, rect)
         pygame.display.update()
+        time.sleep(3)  # ✅ Garde l'écran figé 3 secondes
