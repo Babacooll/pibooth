@@ -15,8 +15,8 @@ class PrinterPlugin(object):
         self._pm = plugin_manager
 
     def print_picture(self, cfg, win, app):
-        # Vérification de l’état de l’imprimante Selphy
-        error_msg = self._check_selphy_status(app)
+        # Vérification de l’état de l’imprimante
+        error_msg = self._check_printer_status(app)
         if error_msg:
             LOGGER.error("⛔ Impression annulée : %s", error_msg)
             self._display_error(win, error_msg)
@@ -74,13 +74,13 @@ class PrinterPlugin(object):
         if app.find_print_event(events) and app.previous_picture_file:
             self.print_picture(cfg, win, app)
 
-    def _check_selphy_status(self, app):
+    def _check_printer_status(self, app):
         try:
             import cups
             conn = cups.Connection()
             LOGGER.info(conn.getPrinters().items())
             for name, attrs in conn.getPrinters().items():
-                if "SELPHY" in name.upper():
+                if "DNP" in name.upper():
                     reasons = [r.lower() for r in attrs.get("printer-state-reasons", [])]
 
                     LOGGER.info("Vérification de l'état de l'imprimante %s", name)
