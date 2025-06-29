@@ -147,13 +147,29 @@ class PoolingTimer(object):
 
 
 def configure_logging(level=logging.INFO, msgfmt=logging.BASIC_FORMAT, datefmt=None, filename=None):
-    """Configure root logger for console printing.
+    """Configure root logger for console printing and Better Stack logging.
     """
     root = logging.getLogger()
 
     if not root.handlers:
         # Set lower level to be sure that all handlers receive the logs
         root.setLevel(logging.DEBUG)
+
+        # Add Better Stack handler
+        try:
+            from logtail import LogtailHandler
+            logtail_handler = LogtailHandler(
+                source_token='qYDM83zov1hT2fhfBW41c3SP',
+                host='https://s1363832.eu-nbg-2.betterstackdata.com',
+            )
+            logtail_handler.setLevel(logging.INFO)
+            root.addHandler(logtail_handler)
+        except ImportError:
+            # logtail package not installed, continue without it
+            pass
+        except Exception as e:
+            # Handle any other Better Stack setup errors gracefully
+            print(f"Warning: Could not setup Better Stack logging: {e}")
 
         if filename:
             # Create a file handler, all levels are logged
