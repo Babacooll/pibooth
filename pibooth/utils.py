@@ -166,6 +166,7 @@ def configure_logging(level=logging.INFO, msgfmt=logging.BASIC_FORMAT, datefmt=N
             root.addHandler(logtail_handler)
         except ImportError:
             # logtail package not installed, continue without it
+            print("Warning: logtail package not installed, Better Stack logging will not be configured.")
             pass
         except Exception as e:
             # Handle any other Better Stack setup errors gracefully
