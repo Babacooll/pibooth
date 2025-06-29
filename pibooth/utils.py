@@ -157,13 +157,26 @@ def configure_logging(level=logging.INFO, msgfmt=logging.BASIC_FORMAT, datefmt=N
 
         # Add Better Stack handler
         try:
-            from logtail import LogtailHandler
-            logtail_handler = LogtailHandler(
-                source_token='oApAK5xnv74Vu6kZSTgDqk66',
-                host='https://s1363832.eu-nbg-2.betterstackdata.com',
-            )
-            logtail_handler.setLevel(logging.INFO)
-            root.addHandler(logtail_handler)
+            # Try to load environment variables from .env file
+            try:
+                from dotenv import load_dotenv
+                load_dotenv()
+            except ImportError:
+                # python-dotenv not installed, continue without it
+                pass
+            
+            # Get token from environment variable
+            source_token = os.environ.get('LOGTAIL_SOURCE_TOKEN')
+            if source_token:
+                from logtail import LogtailHandler
+                logtail_handler = LogtailHandler(
+                    source_token=source_token,
+                    host='https://s1363832.eu-nbg-2.betterstackdata.com',
+                )
+                logtail_handler.setLevel(logging.INFO)
+                root.addHandler(logtail_handler)
+            else:
+                print("Warning: LOGTAIL_SOURCE_TOKEN not found in environment variables. Better Stack logging will not be configured.")
         except ImportError:
             # logtail package not installed, continue without it
             print("Warning: logtail package not installed, Better Stack logging will not be configured.")
