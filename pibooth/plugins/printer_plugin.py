@@ -80,6 +80,7 @@ class PrinterPlugin(object):
             conn = cups.Connection()
             LOGGER.info(conn.getPrinters().items())
             for name, attrs in conn.getPrinters().items():
+                LOGGER.info(name.upper())
                 if "DNP" in name.upper():
                     reasons = [r.lower() for r in attrs.get("printer-state-reasons", [])]
 
