@@ -81,7 +81,7 @@ class PrinterPlugin(object):
             LOGGER.info(conn.getPrinters().items())
             for name, attrs in conn.getPrinters().items():
                 LOGGER.info(name.upper())
-                if "DNP" in name.upper():
+                if "DAI_NIPPON_PRINTING" in name.upper():
                     reasons = [r.lower() for r in attrs.get("printer-state-reasons", [])]
 
                     LOGGER.info("Vérification de l'état de l'imprimante %s", name)
