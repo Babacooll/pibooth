@@ -77,3 +77,6 @@ target/
 
 
 .env
+
+# venv
+.venv/
