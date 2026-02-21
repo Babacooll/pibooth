@@ -171,7 +171,7 @@ def configure_logging(level=logging.INFO, msgfmt=logging.BASIC_FORMAT, datefmt=N
                 from logtail import LogtailHandler
                 logtail_handler = LogtailHandler(
                     source_token=source_token,
-                    host='https://s1363832.eu-nbg-2.betterstackdata.com',
+                    host=os.environ.get('LOGTAIL_ENDPOINT'),
                 )
                 logtail_handler.setLevel(logging.INFO)
                 root.addHandler(logtail_handler)
