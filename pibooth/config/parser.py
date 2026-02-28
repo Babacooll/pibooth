@@ -172,6 +172,10 @@ DEFAULT = odict((
                 ((255, 255, 255),
                  "Background RGB color or image path (list of tuples or quoted paths accepted)",
                  None, None)),
+            ("photo_format",
+                ("standard",
+                 "Photo format: 'standard' (4x6) or 'strip' (2x6 bandelette)",
+                 "Photo format", ['standard', 'strip'])),
         ))
      ),
     ("CAMERA",
