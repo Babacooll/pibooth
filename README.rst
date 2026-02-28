@@ -54,6 +54,23 @@ Pibooth organisation's plugin
 - `pibooth-qrcode <https://github.com/pibooth/pibooth-qrcode>`_
 - `pibooth-extra-lights <https://github.com/pibooth/pibooth-extra-lights>`_
 
+Vintone additions
+=================
+
+This fork includes a **network status overlay** plugin (``pibooth/plugins/network_status_plugin.py``)
+that draws a discreet indicator pill in the top-right corner showing connection type
+(WiFi / 4G / ETH) and signal strength bars. Hidden during photo capture.
+
+For testing over SSH (where disconnecting WiFi would drop your session), use the
+debug override environment variable::
+
+    PIBOOTH_NET_DEBUG=WiFi:3 pibooth    # "WiFi" with 3 green bars
+    PIBOOTH_NET_DEBUG=4G:1 pibooth      # "4G" with 1 red bar
+    PIBOOTH_NET_DEBUG=OFF:0 pibooth     # disconnected state
+    PIBOOTH_NET_DEBUG=ETH:4 pibooth     # "ETH" with full signal
+
+Format is ``TYPE:BARS`` where BARS is 0-4. Color is automatic (3-4 = green, 2 = orange, 0-1 = red).
+
 Third-party plugins
 ===================
 

@@ -6,6 +6,7 @@ Shows connection type (WiFi / 4G / ETH) and signal strength bars.
 Designed for on-site debugging during events without distracting guests.
 """
 
+import os
 import subprocess
 import time
 
@@ -92,11 +93,26 @@ class NetworkStatusPlugin(object):
     # ------------------------------------------------------------------
 
     def _refresh(self):
-        """Poll network status (throttled to every _CACHE_TTL seconds)."""
+        """Poll network status (throttled to every _CACHE_TTL seconds).
+
+        Set PIBOOTH_NET_DEBUG to force a display state for testing, e.g.:
+            PIBOOTH_NET_DEBUG=WiFi:3   → "WiFi" with 3 green bars
+            PIBOOTH_NET_DEBUG=4G:1     → "4G" with 1 red bar
+            PIBOOTH_NET_DEBUG=OFF:0    → "OFF" with 0 bars
+        """
         now = time.monotonic()
         if now - self._last_check < self._CACHE_TTL:
             return
         self._last_check = now
+
+        debug = os.environ.get("PIBOOTH_NET_DEBUG")
+        if debug:
+            parts = debug.split(":")
+            self._net_type = parts[0]
+            bars = int(parts[1]) if len(parts) > 1 else 4
+            self._bars = max(0, min(4, bars))
+            self._color = _GREEN if self._bars >= 3 else _ORANGE if self._bars == 2 else _RED
+            return
 
         iface = _get_default_interface()
         if not iface:
