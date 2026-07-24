@@ -47,3 +47,37 @@ jobs:
         pytest --cov pibooth
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
+
+  package:
+    # Checks what a user actually receives: the built wheel, installed in an
+    # empty environment. The job above installs in editable mode on a runner
+    # that already has the dependencies resolved, so it cannot catch a
+    # dependency that has no installable release for a given Python version.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Build the wheel
+      run: |
+        python -m pip install --upgrade pip build twine
+        python -m build --wheel .
+        twine check dist/*
+    - name: Install the wheel in a clean environment
+      run: |
+        python -m venv /tmp/install-check
+        /tmp/install-check/bin/pip install dist/pibooth-*.whl
+    - name: Start the installed application
+      env:
+        SDL_VIDEODRIVER: dummy
+      run: |
+        /tmp/install-check/bin/pibooth --reset /tmp/cfg-check
+        test -f /tmp/cfg-check/pibooth.cfg
+        test -f /tmp/cfg-check/translations.cfg
