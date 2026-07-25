@@ -9,6 +9,9 @@ import os
 import os.path as osp
 import itertools
 import inspect
+import shlex
+import shutil
+import sys
 from configparser import RawConfigParser
 from collections import OrderedDict as odict
 from pibooth.utils import LOGGER, open_text_editor
@@ -19,6 +22,37 @@ def values_list_repr(values):
     """Concatenate a list of values to a readable string.
     """
     return "'{}' or '{}'".format("', '".join([str(i) for i in values[:-1]]), values[-1])
+
+
+def get_launch_command():
+    """Return the command to start pibooth, as an absolute path when it can be
+    resolved.
+
+    The auto-startup file is read by the desktop session, which does not
+    necessarily share the PATH of the shell pibooth was installed from. An
+    absolute path is therefore required when pibooth lives in a virtual
+    environment, and harmless when it is installed system-wide.
+    """
+    # Console scripts sit next to the interpreter of their environment
+    command = osp.join(osp.dirname(sys.executable), 'pibooth')
+    if osp.isfile(command):
+        return command
+    # Started as 'python -m pibooth.booth', fallback to a PATH lookup
+    return shutil.which('pibooth') or 'pibooth'
+
+
+def desktop_quote(arg):
+    """Quote an argument for the ``Exec`` key of a desktop entry file.
+
+    Desktop entries do not use shell quoting: single quotes have no special
+    meaning there. Reserved characters have to be enclosed in double quotes,
+    a few of them being additionally escaped with a backslash.
+    """
+    if not any(char in arg for char in ' \t\n"\'\\><~|&;$*?#()`'):
+        return arg
+    for char in ('\\', '"', '`', '$'):  # backslash first, it escapes the others
+        arg = arg.replace(char, '\\' + char)
+    return '"{}"'.format(arg)
 
 
 DEFAULT = odict((
@@ -331,12 +365,25 @@ class PiConfigParser(RawConfigParser):
         enable = self.getboolean('GENERAL', 'autostart')
         delay = self.getint('GENERAL', 'autostart_delay')
         if enable:
+            command = get_launch_command()
+            content = "[Desktop Entry]\nName=pibooth\n"
+            if delay > 0:
+                # The whole shell snippet is a single argument of 'bash -c',
+                # quoted for the desktop entry, and the command inside it
+                # quoted for the shell that will run it.
+                content += "Exec=bash -c {}\n".format(
+                    desktop_quote("sleep {} && {}".format(delay, shlex.quote(command))))
+            else:
+                content += "Exec={}\n".format(desktop_quote(command))
+            content += "Type=application\n"
+
             regenerate = True
             if osp.isfile(filename):
                 with open(filename, 'r') as fp:
-                    txt = fp.read()
-                    if delay > 0 and f"sleep {delay}" in txt or delay <= 0 and "sleep" not in txt:
-                        regenerate = False
+                    # Rewrite as soon as anything differs: the delay may have
+                    # changed, but so may the path to the executable if pibooth
+                    # was re-installed somewhere else.
+                    regenerate = fp.read() != content
 
             if regenerate:
                 if not osp.isdir(dirname):
@@ -344,13 +391,7 @@ class PiConfigParser(RawConfigParser):
 
                 LOGGER.info("Generate the auto-startup file in '%s'", dirname)
                 with open(filename, 'w') as fp:
-                    fp.write("[Desktop Entry]\n")
-                    fp.write("Name=pibooth\n")
-                    if delay > 0:
-                        fp.write(f"Exec=bash -c \"sleep {delay} && pibooth\"\n")
-                    else:
-                        fp.write("Exec=pibooth\n")
-                    fp.write("Type=application\n")
+                    fp.write(content)
 
         elif not enable and osp.isfile(filename):
             LOGGER.info("Remove the auto-startup file in '%s'", dirname)
