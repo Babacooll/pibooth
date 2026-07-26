@@ -41,3 +41,10 @@ Option relative to a timeout shall have an name ending with ``_delay```.
 The core plugins expose a ``name`` attribute of the form
 ``pibooth-core:<something>``. That name is what ``[GENERAL][plugins_disabled]``
 matches against.
+
+5. **Contributing a change**
+
+- Keep a change focused. Do not turn a feature change into a repository-wide
+  lint cleanup.
+- Say plainly when a change could not be verified on real hardware, rather than
+  implying it was tested.

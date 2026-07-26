@@ -66,9 +66,10 @@ Plugins call order
 
 Hooks are called in **LIFO order**: the last plugin registered is called first.
 The core plugins are therefore registered last **on purpose**, so that they run
-before any external plugin, and in the order given by the list in
-``pibooth/plugins/__init__.py`` — ``CameraPlugin`` first, ``LightsPlugin`` last.
-Reordering that list changes the runtime behaviour.
+before any external plugin. The list in ``pibooth/plugins/__init__.py`` is written
+in *registration* order (``LightsPlugin`` first, ``CameraPlugin`` last), which is
+the reverse of the *call* order — ``CameraPlugin`` is called first and
+``LightsPlugin`` last. Reordering that list changes the runtime behaviour.
 
 .. warning:: This has a consequence that surprises plugin authors. The
              ``state_<name>_validate`` hooks are declared ``firstresult=True``,
@@ -150,6 +151,3 @@ Most of the hardware-facing code cannot be exercised on a development machine:
 ``camera/__init__.py::find_camera()`` probes the available backends; on a
 development machine it usually resolves to ``CvCamera`` when a webcam is
 present, and raises otherwise.
-
-Say plainly when a change could not be verified on real hardware, rather than
-implying it was tested.

@@ -9,7 +9,7 @@ Keys
 ^^^^
 
 Every language section must define all of them. A missing key falls back to
-English at runtime with a warning, which is a bug rather than a feature.
+English at runtime and logs a warning.
 
 ================== =========================================================
 Key                Where it is displayed

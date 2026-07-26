@@ -46,8 +46,7 @@ build::
     pylint $(git ls-files '*.py')
 
 The second ``flake8`` invocation and ``pylint`` are informational: the code base
-does not satisfy them today. Do not turn a feature change into a repository-wide
-lint cleanup.
+does not satisfy them today.
 
 Starting the application
 ^^^^^^^^^^^^^^^^^^^^^^^^
