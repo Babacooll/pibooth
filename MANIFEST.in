@@ -1,4 +1,3 @@
 include README.rst
 include LICENSE
-# Read by setup.py at build time: without it the sdist cannot be built into a wheel
 include docs/requirements.txt

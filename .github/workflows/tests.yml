@@ -49,10 +49,6 @@ jobs:
       uses: codecov/codecov-action@v3
 
   package:
-    # Checks what a user actually receives: the built distributions, installed
-    # in an empty environment. The job above installs in editable mode on a
-    # runner that already has the dependencies resolved, so it cannot catch a
-    # dependency that has no installable release for a given Python version.
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -68,10 +64,7 @@ jobs:
     - name: Build the source distribution and the wheel
       run: |
         python -m pip install --upgrade pip build twine
-        # Not --wheel: build the sdist, then the wheel *from that sdist*, so a
-        # file missing from MANIFEST.in fails here instead of on PyPI.
         python -m build .
-        # --strict so a malformed long_description fails instead of warning.
         twine check --strict dist/*
     - name: Install the wheel in a clean environment
       run: |
@@ -81,14 +74,11 @@ jobs:
       env:
         SDL_VIDEODRIVER: dummy
       run: |
-        # --reset regenerates the configuration files and exits, but it imports
-        # every declared runtime dependency along the way.
         "$RUNNER_TEMP/install-check/bin/pibooth" --reset "$RUNNER_TEMP/cfg-check"
         test -f "$RUNNER_TEMP/cfg-check/pibooth.cfg"
         test -f "$RUNNER_TEMP/cfg-check/translations.cfg"
     - name: Check the data files shipped with the wheel
       run: |
-        # A missing package_data entry installs fine and only fails at runtime.
         SITE=$("$RUNNER_TEMP/install-check/bin/python" -c \
                "import pibooth, os.path as osp; print(osp.dirname(pibooth.__file__))")
         ls "$SITE"/fonts/*.ttf > /dev/null
@@ -97,8 +87,6 @@ jobs:
       env:
         SDL_VIDEODRIVER: dummy
       run: |
-        # pibooth-diag and pibooth-printcfg are left out on purpose: they need
-        # the 'dslr' and 'printer' extras, which a bare install does not pull in.
         for script in pibooth-count pibooth-fonts pibooth-regen; do
           "$RUNNER_TEMP/install-check/bin/$script" --help > /dev/null
         done
