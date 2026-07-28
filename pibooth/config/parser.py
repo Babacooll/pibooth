@@ -26,34 +26,25 @@ def values_list_repr(values):
 
 def get_launch_command():
     """Return the command to start pibooth, as an absolute path when it can be
-    resolved.
-
-    The auto-startup file is read by the desktop session, which does not
-    necessarily share the PATH of the shell pibooth was installed from. An
-    absolute path is therefore required when pibooth lives in a virtual
-    environment, and harmless when it is installed system-wide.
+    resolved. The desktop session reading the auto-startup file does not
+    necessarily share the PATH of the shell pibooth was installed from.
     """
-    # Console scripts sit next to the interpreter of their environment
     command = osp.join(osp.dirname(sys.executable), 'pibooth')
     if osp.isfile(command):
         return command
-    # Started as 'python -m pibooth.booth', fallback to a PATH lookup
     return shutil.which('pibooth') or 'pibooth'
 
 
 def desktop_quote(arg):
-    """Quote an argument for the ``Exec`` key of a desktop entry file.
-
-    Desktop entries do not use shell quoting: single quotes have no special
-    meaning there. Reserved characters have to be enclosed in double quotes,
-    a few of them being additionally escaped with a backslash.
+    """Quote an argument for the ``Exec`` key of a desktop entry file. Desktop
+    entries do not use shell quoting: reserved characters are enclosed in double
+    quotes, a few of them escaped with a backslash, and '%' is doubled to not be
+    read as a field code.
     """
-    # A literal percent sign is written '%%', quoted or not, else it would be
-    # read as one of the field codes ('%f', '%U', ...) expanded by the launcher
     arg = arg.replace('%', '%%')
     if not any(char in arg for char in ' \t\n"\'\\><~|&;$*?#()`'):
         return arg
-    for char in ('\\', '"', '`', '$'):  # backslash first, it escapes the others
+    for char in ('\\', '"', '`', '$'):
         arg = arg.replace(char, '\\' + char)
     return '"{}"'.format(arg)
 
@@ -371,9 +362,6 @@ class PiConfigParser(RawConfigParser):
             command = get_launch_command()
             content = "[Desktop Entry]\nName=pibooth\n"
             if delay > 0:
-                # The whole shell snippet is a single argument of 'bash -c',
-                # quoted for the desktop entry, and the command inside it
-                # quoted for the shell that will run it.
                 content += "Exec=bash -c {}\n".format(
                     desktop_quote("sleep {} && {}".format(delay, shlex.quote(command))))
             else:
@@ -383,9 +371,6 @@ class PiConfigParser(RawConfigParser):
             regenerate = True
             if osp.isfile(filename):
                 with open(filename, 'r') as fp:
-                    # Rewrite as soon as anything differs: the delay may have
-                    # changed, but so may the path to the executable if pibooth
-                    # was re-installed somewhere else.
                     regenerate = fp.read() != content
 
             if regenerate:

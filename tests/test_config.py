@@ -12,8 +12,8 @@ from pibooth.config.parser import PiConfigParser, desktop_quote, get_launch_comm
 
 @pytest.fixture
 def autostart_cfg(cfg_path, tmpdir, monkeypatch):
-    """Return a configuration with autostart enabled, and the path to the
-    auto-startup file it generates in an isolated home directory.
+    """Return a config with autostart enabled and the auto-startup file it
+    generates in an isolated home directory.
     """
     monkeypatch.setenv('HOME', str(tmpdir))
     monkeypatch.setattr(parser, 'get_launch_command', lambda: '/venv/bin/pibooth')
@@ -92,7 +92,6 @@ def test_desktop_quote_usual_path(path):
 
 def test_desktop_quote_reserved_character():
     assert desktop_quote('/home/my pi/venv/bin/pibooth') == '"/home/my pi/venv/bin/pibooth"'
-    # A single quote is reserved, but has no special meaning inside the quotes
     assert desktop_quote("/home/o'pi/venv/bin/pibooth") == '"/home/o\'pi/venv/bin/pibooth"'
 
 
@@ -104,7 +103,6 @@ def test_desktop_quote_escaped_character():
 
 
 def test_desktop_quote_percent_sign():
-    # '%' is not reserved: it is doubled, but does not require quotes on its own
     assert desktop_quote('/home/100%/bin/pibooth') == '/home/100%%/bin/pibooth'
     assert desktop_quote('/home/100% pi/bin/pibooth') == '"/home/100%% pi/bin/pibooth"'
 
@@ -152,7 +150,6 @@ def test_autostart_file_quotes_path_with_space(autostart_cfg, monkeypatch):
 
     config.set('GENERAL', 'autostart_delay', '5')
     config.handle_autostart()
-    # Quoted for the shell inside, for the desktop entry outside
     assert 'Exec=bash -c "sleep 5 && \'/home/my pi/venv/bin/pibooth\'"\n' in desktop_file.read()
 
 
