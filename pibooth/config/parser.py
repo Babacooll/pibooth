@@ -9,6 +9,9 @@ import os
 import os.path as osp
 import itertools
 import inspect
+import shlex
+import shutil
+import sys
 from configparser import RawConfigParser
 from collections import OrderedDict as odict
 from pibooth.utils import LOGGER, open_text_editor
@@ -19,6 +22,31 @@ def values_list_repr(values):
     """Concatenate a list of values to a readable string.
     """
     return "'{}' or '{}'".format("', '".join([str(i) for i in values[:-1]]), values[-1])
+
+
+def get_launch_command():
+    """Return the command to start pibooth, as an absolute path when it can be
+    resolved. The desktop session reading the auto-startup file does not
+    necessarily share the PATH of the shell pibooth was installed from.
+    """
+    command = osp.join(osp.dirname(sys.executable), 'pibooth')
+    if osp.isfile(command):
+        return command
+    return shutil.which('pibooth') or 'pibooth'
+
+
+def desktop_quote(arg):
+    """Quote an argument for the ``Exec`` key of a desktop entry file. Desktop
+    entries do not use shell quoting: reserved characters are enclosed in double
+    quotes, a few of them escaped with a backslash, and '%' is doubled to not be
+    read as a field code.
+    """
+    arg = arg.replace('%', '%%')
+    if not any(char in arg for char in ' \t\n"\'\\><~|&;$*?#()`'):
+        return arg
+    for char in ('\\', '"', '`', '$'):
+        arg = arg.replace(char, '\\' + char)
+    return '"{}"'.format(arg)
 
 
 DEFAULT = odict((
@@ -331,12 +359,19 @@ class PiConfigParser(RawConfigParser):
         enable = self.getboolean('GENERAL', 'autostart')
         delay = self.getint('GENERAL', 'autostart_delay')
         if enable:
+            command = get_launch_command()
+            content = "[Desktop Entry]\nName=pibooth\n"
+            if delay > 0:
+                content += "Exec=bash -c {}\n".format(
+                    desktop_quote("sleep {} && {}".format(delay, shlex.quote(command))))
+            else:
+                content += "Exec={}\n".format(desktop_quote(command))
+            content += "Type=application\n"
+
             regenerate = True
             if osp.isfile(filename):
                 with open(filename, 'r') as fp:
-                    txt = fp.read()
-                    if delay > 0 and f"sleep {delay}" in txt or delay <= 0 and "sleep" not in txt:
-                        regenerate = False
+                    regenerate = fp.read() != content
 
             if regenerate:
                 if not osp.isdir(dirname):
@@ -344,13 +379,7 @@ class PiConfigParser(RawConfigParser):
 
                 LOGGER.info("Generate the auto-startup file in '%s'", dirname)
                 with open(filename, 'w') as fp:
-                    fp.write("[Desktop Entry]\n")
-                    fp.write("Name=pibooth\n")
-                    if delay > 0:
-                        fp.write(f"Exec=bash -c \"sleep {delay} && pibooth\"\n")
-                    else:
-                        fp.write("Exec=pibooth\n")
-                    fp.write("Type=application\n")
+                    fp.write(content)
 
         elif not enable and osp.isfile(filename):
             LOGGER.info("Remove the auto-startup file in '%s'", dirname)
