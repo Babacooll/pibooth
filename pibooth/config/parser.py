@@ -48,6 +48,9 @@ def desktop_quote(arg):
     meaning there. Reserved characters have to be enclosed in double quotes,
     a few of them being additionally escaped with a backslash.
     """
+    # A literal percent sign is written '%%', quoted or not, else it would be
+    # read as one of the field codes ('%f', '%U', ...) expanded by the launcher
+    arg = arg.replace('%', '%%')
     if not any(char in arg for char in ' \t\n"\'\\><~|&;$*?#()`'):
         return arg
     for char in ('\\', '"', '`', '$'):  # backslash first, it escapes the others
